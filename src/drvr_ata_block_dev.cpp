@@ -15,65 +15,65 @@ ATABlockDriver::ATABlockDriver() : IBlockDevDriver(ATA_BLOCK_SIZE)
 
 ATABlockDriver::~ATABlockDriver()
 {
-	if (_devName)
-	{
-		delete[] _devName;
-		_devName = nullptr;
-	}
+   if (_devName)
+   {
+      delete[] _devName;
+      _devName = nullptr;
+   }
 
-	if (_irqSubscriptions)
-	{
-		delete[] _irqSubscriptions;
-		_irqSubscriptions = nullptr;
-	}
+   if (_irqSubscriptions)
+   {
+      delete[] _irqSubscriptions;
+      _irqSubscriptions = nullptr;
+   }
 }
 
 result_t ATABlockDriver::Load(_IN_HANDLE_ handle_t driverHandle)
 {
-	result_t res = RES_SUCCESS;
-	_handle = driverHandle;
-	char* devName = "ATA Driver";
-	_devName = new char[MemoryLength(devName)];
-	MemoryCopyUntil<char>(_devName, devName, '\0');
-	
-	//Set up the IRQs
+   result_t res = RES_SUCCESS;
+   _handle = driverHandle;
+   char* devName = "ATA Driver";
+   _devName = new char[MemoryLength(devName)];
+   MemoryCopyUntil<char>(_devName, devName, '\0');
+
+   //Set up the IRQs
 
 
 
 
-	return res;
+   return res;
 }
 
-result_t ATABlockDriver::Write(_IN_BYTE_ARR_ const uint8_t * buffer, 
-										 _IN_SIZE_ size_t bufLen, 
-										 _IN_SIZE_ size_t byteOffset)
+result_t ATABlockDriver::Write(_IN_BYTE_ARR_ const uint8_t * buffer,
+                               _IN_SIZE_ size_t bufLen,
+                               _IN_SIZE_ size_t byteOffset)
 {
-	return RES_SUCCESS;
+   return RES_SUCCESS;
 }
 
 result_t ATABlockDriver::Read(_IN_SIZE_ size_t bufLen,
-										_OUT_BYTE_ARR_ uint8_t* buffer,
-										_IN_SIZE_ size_t byteOffset)
+                              _OUT_BYTE_ARR_ uint8_t* buffer,
+                              _IN_SIZE_ size_t byteOffset)
 {
-	return RES_SUCCESS;
+   return RES_SUCCESS;
 }
 
 result_t ATABlockDriver::Unload()
 {
-	return RES_SUCCESS;
+   return RES_SUCCESS;
 }
 
 result_t ATABlockDriver::SwapIn(_IN_POINTER_ kernel_swap_state_t * state_p)
 {
-	return RES_SUCCESS;
+   return RES_SUCCESS;
 }
 
 result_t ATABlockDriver::SwapOut(_IN_POINTER_ kernel_swap_state_t * state_p)
 {
-	return RES_SUCCESS;
+   return RES_SUCCESS;
 }
 
 result_t ATABlockDriver::Interrupt(irqnumber_t irq)
 {
-	return RES_SUCCESS;
+   return RES_SUCCESS;
 }

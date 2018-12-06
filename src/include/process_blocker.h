@@ -5,17 +5,17 @@
 
 class ProcessBlocker
 {
-	public:
-	ProcessBlocker();
+   public:
+   ProcessBlocker();
 
-	virtual ~ProcessBlocker();
+   virtual ~ProcessBlocker();
 
-	virtual void Block(_IN_POINTER_ context_t* proc_p);
-	
-	virtual void UnblockFirst();
+   virtual void Block(_IN_POINTER_ context_t* proc_p);
 
-	virtual void UnblockAll();
+   virtual void UnblockFirst();
 
-	private:
-	ll_node_t<context_t*>* _blockedProcs_p;
+   virtual void UnblockAll();
+
+   private:
+   ll_node_t<context_t*>* _blockedProcs_p;
 };

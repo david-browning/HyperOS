@@ -8,7 +8,6 @@
  *         One Grand Avenue.
  *         San Luis Obispo, CA  93407  USA
  *
- * Email:  pnico@csc.calpoly.edu
  *
  * Revision History:
  *         $Log: snakes.c,v $
@@ -81,8 +80,8 @@ static int rows;                /* global for the obvious reasons */
 static int cols;
 
 static int endsnake = 0;            /* a flag, that when set causes the
-											* currently running snake to exit
-											*/
+                                 * currently running snake to exit
+                                 */
 
 
 #define limit(x,min,max) ((x)<(min)?(min):(((x)>(max))?(max):x))
@@ -91,14 +90,14 @@ static int endsnake = 0;            /* a flag, that when set causes the
 static unsigned int seed = 1;
 static void SeedRandom(int newseed)
 {
-	seed = (unsigned)newseed & 0x7fffffffffffffffU;
+   seed = (unsigned)newseed & 0x7fffffffffffffffU;
 }
 
 int Random(void)
 {
-	seed = (seed * 6364136223846793005U + 1442695040888963407U)
-		& 0x7fffffffffffffffU;
-	return (int)seed;
+   seed = (seed * 6364136223846793005U + 1442695040888963407U)
+      & 0x7fffffffffffffffU;
+   return (int)seed;
 }
 
 // Delay functions
@@ -114,40 +113,43 @@ snake new_snake(int y, int x, int len, int dir, int color)
 /* if parts of a snake would be off the screen, it starts
  * "coiled" (with parts stacked on top of each other.
  */
-	snake newSnake;
-	int i;
+   snake newSnake;
+   int i;
 
-	/* get snake on the screen */
-	y = limit(y, 0, rows - 1);
-	x = limit(x, 0, cols - 1);
+   /* get snake on the screen */
+   y = limit(y, 0, rows - 1);
+   x = limit(x, 0, cols - 1);
 
-	/* now get the snake */
-	if (!(newSnake = new snake_st)) {
-		return nullptr;
-	}
+   /* now get the snake */
+   if (!(newSnake = new snake_st))
+   {
+      return nullptr;
+   }
 
-	newSnake->dir = (direction)dir;
-	newSnake->len = len;
-	newSnake->color = color;
-	newSnake->body = (sn_point*)MemoryAllocate<sn_point>(newSnake->len * sizeof(sn_point));
-	if (!newSnake->body) {
-		delete newSnake;
-		return nullptr;
-	}
+   newSnake->dir = (direction)dir;
+   newSnake->len = len;
+   newSnake->color = color;
+   newSnake->body = (sn_point*)MemoryAllocate<sn_point>(newSnake->len * sizeof(sn_point));
+   if (!newSnake->body)
+   {
+      delete newSnake;
+      return nullptr;
+   }
 
-	for (i = 0; i < newSnake->len; i++) {
-		newSnake->body[i].x = x;
-		newSnake->body[i].y = y;
-		x = x - deltaX[newSnake->dir];   /* work backwards, so head is at loc */
-		y = y - deltaY[newSnake->dir];
-		y = limit(y, 0, rows - 1);
-		x = limit(x, 0, cols - 1);
-	}
+   for (i = 0; i < newSnake->len; i++)
+   {
+      newSnake->body[i].x = x;
+      newSnake->body[i].y = y;
+      x = x - deltaX[newSnake->dir];   /* work backwards, so head is at loc */
+      y = y - deltaY[newSnake->dir];
+      y = limit(y, 0, rows - 1);
+      x = limit(x, 0, cols - 1);
+   }
 
-	newSnake->others = allsnakes;
-	allsnakes = newSnake;
+   newSnake->others = allsnakes;
+   allsnakes = newSnake;
 
-	return newSnake;
+   return newSnake;
 }
 
 void free_snake(snake s)
@@ -155,285 +157,305 @@ void free_snake(snake s)
 /* deallocate the given snake.  First remove it from allsnakes,
  * then free its bits
  */
-	snake sp;
-	/* remove s from the community of snakes */
-	if (s == allsnakes)
-		allsnakes = allsnakes->others;
-	else {
-		for (sp = allsnakes; s != sp->others; sp = sp->others)
-			;
-		if (sp) {
-			sp->others = sp->others->others;
-		}
-	}
-	/* now free the parts of s */
-	MemoryFree(s->body);
-	delete s;
+   snake sp;
+   /* remove s from the community of snakes */
+   if (s == allsnakes)
+      allsnakes = allsnakes->others;
+   else
+   {
+      for (sp = allsnakes; s != sp->others; sp = sp->others)
+         ;
+      if (sp)
+      {
+         sp->others = sp->others->others;
+      }
+   }
+   /* now free the parts of s */
+   MemoryFree(s->body);
+   delete s;
 }
 
 sn_point food = { -1,-1 };           /* the location of the food */
 
 void place_food()
 {
-	do
-	{
-		food.x = Random() % cols;
-		food.y = Random() % rows;
-	}
-	while (obstructed(food));
+   do
+   {
+      food.x = Random() % cols;
+      food.y = Random() % rows;
+   }
+   while (obstructed(food));
 }
 
 void draw_food()
 {
-	PrintCharacter(vgaMakeAttribute(VGA_COLORS::White, VGA_COLORS::Black, false), SN_FOOD_CHAR, food.x, food.y);
+   PrintCharacter(vgaMakeAttribute(VGA_COLORS::White, VGA_COLORS::Black, false), SN_FOOD_CHAR, food.x, food.y);
   //VGA_display_attr_char(food.x, food.y,SN_FOOD_CHAR, VGA_WHITE, VGA_BLACK);
 }
 
 int onfood(snake s)
 {
 /* is the snake's head on the food */
-	return ((s->body[0].x == food.x) && (s->body[0].y == food.y));
+   return ((s->body[0].x == food.x) && (s->body[0].y == food.y));
 }
 
 void run_hungry_snake(void *arg)
 {
-	snake *s = (snake*)arg;
-	/* run a snake until it eats enough food.  We keep track of how
-	 * much each snake has eaten by its color.  Snakes get brighter
-	 * and brighter until they turn white then wink out.
-	 */
-	if ((food.x == -1) || (food.y == -1)) {
-		place_food();
-		draw_food();
-	}
+   snake *s = (snake*)arg;
+   /* run a snake until it eats enough food.  We keep track of how
+    * much each snake has eaten by its color.  Snakes get brighter
+    * and brighter until they turn white then wink out.
+    */
+   if ((food.x == -1) || (food.y == -1))
+   {
+      place_food();
+      draw_food();
+   }
 
-	for (;;) {
-		delay();
-		erase_snake(*s);
-		move_hungry_snake(*s);
-		draw_snake(*s);
-		/* if the new head is on the food, count it as eaten and
-		 * replace the food
-		 */
-		if (onfood(*s)) {
-			place_food();             /* place new snake food */
-			draw_food();              /* draw it */
+   for (;;)
+   {
+      delay();
+      erase_snake(*s);
+      move_hungry_snake(*s);
+      draw_snake(*s);
+      /* if the new head is on the food, count it as eaten and
+       * replace the food
+       */
+      if (onfood(*s))
+      {
+         place_food();             /* place new snake food */
+         draw_food();              /* draw it */
 
-			(*s)->color++;           /* use the color as the counter */
-			erase_snake(*s);
-			/* now check to see if we're "full" */
-			if ((*s)->color > MAX_VISIBLE_SNAKE) {
-				free_snake(*s);
-				ProcessExit();
-			}
-			draw_snake(*s);
-		}
-		/* now check to see if we've been signaled to exit */
-		if (endsnake) {
-			endsnake = 0;               /* clear the flag */
-			erase_snake(*s);
-			free_snake(*s);
-			ProcessExit();
-		}
+         (*s)->color++;           /* use the color as the counter */
+         erase_snake(*s);
+         /* now check to see if we're "full" */
+         if ((*s)->color > MAX_VISIBLE_SNAKE)
+         {
+            free_snake(*s);
+            ProcessExit();
+         }
+         draw_snake(*s);
+      }
+      /* now check to see if we've been signaled to exit */
+      if (endsnake)
+      {
+         endsnake = 0;               /* clear the flag */
+         erase_snake(*s);
+         free_snake(*s);
+         ProcessExit();
+      }
 
-		ProcessYield();                /* yield to the next snake */
-	}
+      ProcessYield();                /* yield to the next snake */
+   }
 }
 
 
 
 void run_snake(void *arg)
 {
-	snake *s = (snake*)arg;
-	if (uint64_t(arg) == 0x2)
-	{
-		WaitForDebugger();
-		int x = 0;
-	}
+   snake *s = (snake*)arg;
+   if (uint64_t(arg) == 0x2)
+   {
+      WaitForDebugger();
+      int x = 0;
+   }
 
-	/* run a snake until the endsnake flag is set. */
-	for (;;) {
-		delay();
-		erase_snake(*s);
-		move_snake(*s);
-		draw_snake(*s);
-		if (endsnake) {
-			endsnake = 0;               /* clear the flag */
-			erase_snake(*s);
-			free_snake(*s);
-			ProcessExit();
-		}
+   /* run a snake until the endsnake flag is set. */
+   for (;;)
+   {
+      delay();
+      erase_snake(*s);
+      move_snake(*s);
+      draw_snake(*s);
+      if (endsnake)
+      {
+         endsnake = 0;               /* clear the flag */
+         erase_snake(*s);
+         free_snake(*s);
+         ProcessExit();
+      }
 
-		ProcessYield();               /* yield to the next snake */
-	}
+      ProcessYield();               /* yield to the next snake */
+   }
 }
 
 void draw_all_snakes()
 {
 /* draw all the snakes */
-	snake s;
-	for (s = allsnakes; s; s = s->others)
-		draw_snake(s);
+   snake s;
+   for (s = allsnakes; s; s = s->others)
+      draw_snake(s);
 }
 
 static int obstructed(sn_point p)
 {
-	int  i;
-	snake s;
+   int  i;
+   snake s;
 
-	int ret = 0;
-	if (p.x >= cols || p.x < 0 || p.y >= rows || p.y < 0) {
-	  /* check the walls */
-		ret = 1;
-	}
-	else for (s = allsnakes; s && !ret; s = s->others) { /* look for snakes */
-		for (i = 0; i < s->len; i++)
-			if ((p.x == s->body[i].x) && (p.y == s->body[i].y)) {
-				ret = 1;
-				break;
-			}
-	}
+   int ret = 0;
+   if (p.x >= cols || p.x < 0 || p.y >= rows || p.y < 0)
+   {
+/* check the walls */
+      ret = 1;
+   }
+   else for (s = allsnakes; s && !ret; s = s->others)
+   { /* look for snakes */
+      for (i = 0; i < s->len; i++)
+         if ((p.x == s->body[i].x) && (p.y == s->body[i].y))
+         {
+            ret = 1;
+            break;
+         }
+   }
 
-	return ret;
+   return ret;
 }
 
 
 static void move_snake(snake s)
 {
-	int i;
-	sn_point newhead;
-	int deadends[NUMDIRS];
-	int alldead;
+   int i;
+   sn_point newhead;
+   int deadends[NUMDIRS];
+   int alldead;
 
-	for (i = 0; i < NUMDIRS; i++) {
-		deadends[i] = 0;
-	}
-	alldead = 0;
+   for (i = 0; i < NUMDIRS; i++)
+   {
+      deadends[i] = 0;
+   }
+   alldead = 0;
 
-	newhead.x = s->body[0].x + deltaX[s->dir];
-	newhead.y = s->body[0].y + deltaY[s->dir];
+   newhead.x = s->body[0].x + deltaX[s->dir];
+   newhead.y = s->body[0].y + deltaY[s->dir];
 
-	while (obstructed(newhead) && !alldead) {
-		deadends[s->dir] = 1;
-		s->dir = (direction)(Random() % NUMDIRS);
-		if (s->dir >= NUMDIRS)
-			s->dir = (direction)(NUMDIRS - 1);
-		// s->dir = (int) ((1.0 * Random()/INT_MAX) * NUMDIRS);
-		newhead.x = s->body[0].x + deltaX[s->dir];
-		newhead.y = s->body[0].y + deltaY[s->dir];
-		alldead = 1;
-		for (i = 0; i < NUMDIRS; i++)
-			if (deadends[i] == 0)
-				alldead = 0;
-	}
+   while (obstructed(newhead) && !alldead)
+   {
+      deadends[s->dir] = 1;
+      s->dir = (direction)(Random() % NUMDIRS);
+      if (s->dir >= NUMDIRS)
+         s->dir = (direction)(NUMDIRS - 1);
+      // s->dir = (int) ((1.0 * Random()/INT_MAX) * NUMDIRS);
+      newhead.x = s->body[0].x + deltaX[s->dir];
+      newhead.y = s->body[0].y + deltaY[s->dir];
+      alldead = 1;
+      for (i = 0; i < NUMDIRS; i++)
+         if (deadends[i] == 0)
+            alldead = 0;
+   }
 
-	if (alldead) {              /* we're stuck */
-		newhead = s->body[0];
-	}
+   if (alldead)
+   {              /* we're stuck */
+      newhead = s->body[0];
+   }
 
-	for (i = s->len - 1; i; i--) {
-		s->body[i].x = s->body[i - 1].x;
-		s->body[i].y = s->body[i - 1].y;
-	}
-	s->body[0].x = newhead.x;
-	s->body[0].y = newhead.y;
+   for (i = s->len - 1; i; i--)
+   {
+      s->body[i].x = s->body[i - 1].x;
+      s->body[i].y = s->body[i - 1].y;
+   }
+   s->body[0].x = newhead.x;
+   s->body[0].y = newhead.y;
 
 }
 
 static direction delta2dir[3][3] = { {NW, N, NE},
-												 { W, N,  E},
-												 {SW, S,  SE} };
+                                     { W, N,  E},
+                                     {SW, S,  SE} };
 
 static direction food_direction(int x, int y)
 {
 /* return the direction of the food (well, as close as this system can)
  * get.
  */
-	int deltaX, deltaY;
+   int deltaX, deltaY;
 
-	if (food.x > x)
-		deltaX = 1;
-	else if (food.x < x)
-		deltaX = -1;
-	else
-		deltaX = 0;
+   if (food.x > x)
+      deltaX = 1;
+   else if (food.x < x)
+      deltaX = -1;
+   else
+      deltaX = 0;
 
-	if (food.y > y)
-		deltaY = 1;
-	else if (food.y < y)
-		deltaY = -1;
-	else
-		deltaY = 0;
+   if (food.y > y)
+      deltaY = 1;
+   else if (food.y < y)
+      deltaY = -1;
+   else
+      deltaY = 0;
 
-	return delta2dir[deltaY + 1][deltaX + 1];
+   return delta2dir[deltaY + 1][deltaX + 1];
 }
 
 static void move_hungry_snake(snake s)
 {
-	int i;
-	sn_point newhead;
-	int deadends[NUMDIRS];
-	int alldead;
+   int i;
+   sn_point newhead;
+   int deadends[NUMDIRS];
+   int alldead;
 
-	for (i = 0; i < NUMDIRS; i++) {
-		deadends[i] = 0;
-	}
-	alldead = 0;
+   for (i = 0; i < NUMDIRS; i++)
+   {
+      deadends[i] = 0;
+   }
+   alldead = 0;
 
-	s->dir = food_direction(s->body[0].x, s->body[0].y);
+   s->dir = food_direction(s->body[0].x, s->body[0].y);
 
-	newhead.x = s->body[0].x + deltaX[s->dir];
-	newhead.y = s->body[0].y + deltaY[s->dir];
+   newhead.x = s->body[0].x + deltaX[s->dir];
+   newhead.y = s->body[0].y + deltaY[s->dir];
 
-	while (obstructed(newhead) && !alldead) {
-		deadends[s->dir] = 1;
-		s->dir = (direction)(Random() % NUMDIRS);
-		if (s->dir >= NUMDIRS)
-			s->dir = (direction)(NUMDIRS - 1);
-		// s->dir = (int) ((1.0 * Random()/INT_MAX) * NUMDIRS);
-		newhead.x = s->body[0].x + deltaX[s->dir];
-		newhead.y = s->body[0].y + deltaY[s->dir];
-		alldead = 1;
-		for (i = 0; i < NUMDIRS; i++)
-			if (deadends[i] == 0)
-				alldead = 0;
-	}
+   while (obstructed(newhead) && !alldead)
+   {
+      deadends[s->dir] = 1;
+      s->dir = (direction)(Random() % NUMDIRS);
+      if (s->dir >= NUMDIRS)
+         s->dir = (direction)(NUMDIRS - 1);
+      // s->dir = (int) ((1.0 * Random()/INT_MAX) * NUMDIRS);
+      newhead.x = s->body[0].x + deltaX[s->dir];
+      newhead.y = s->body[0].y + deltaY[s->dir];
+      alldead = 1;
+      for (i = 0; i < NUMDIRS; i++)
+         if (deadends[i] == 0)
+            alldead = 0;
+   }
 
-	if (alldead) {              /* we're stuck */
-		newhead = s->body[0];
-	}
+   if (alldead)
+   {              /* we're stuck */
+      newhead = s->body[0];
+   }
 
-	for (i = s->len - 1; i; i--) {
-		s->body[i].x = s->body[i - 1].x;
-		s->body[i].y = s->body[i - 1].y;
-	}
-	s->body[0].x = newhead.x;
-	s->body[0].y = newhead.y;
+   for (i = s->len - 1; i; i--)
+   {
+      s->body[i].x = s->body[i - 1].x;
+      s->body[i].y = s->body[i - 1].y;
+   }
+   s->body[0].x = newhead.x;
+   s->body[0].y = newhead.y;
 
 }
 
 static void draw_snake(snake s)
 {
-	int i;
+   int i;
 
-	//VGA_display_attr_char(s->body[0].x, s->body[0].y, head[s->dir], colors[s->color], VGA_BLACK);
-	PrintCharacter(vgaMakeAttribute((VGA_COLORS)colors[s->color], VGA_COLORS::Black, false), head[s->dir], s->body[0].x, s->body[0].y);
+   //VGA_display_attr_char(s->body[0].x, s->body[0].y, head[s->dir], colors[s->color], VGA_BLACK);
+   PrintCharacter(vgaMakeAttribute((VGA_COLORS)colors[s->color], VGA_COLORS::Black, false), head[s->dir], s->body[0].x, s->body[0].y);
 
-	for (i = 1; i < s->len; i++)
-	{
-		//VGA_display_attr_char(s->body[i].x, s->body[i].y, SN_BODY_CHAR, colors[s->color], VGA_BLACK);
-		PrintCharacter(vgaMakeAttribute((VGA_COLORS)colors[s->color], VGA_COLORS::Black, false), SN_BODY_CHAR, s->body[i].x, s->body[i].y);
-	}
+   for (i = 1; i < s->len; i++)
+   {
+      //VGA_display_attr_char(s->body[i].x, s->body[i].y, SN_BODY_CHAR, colors[s->color], VGA_BLACK);
+      PrintCharacter(vgaMakeAttribute((VGA_COLORS)colors[s->color], VGA_COLORS::Black, false), SN_BODY_CHAR, s->body[i].x, s->body[i].y);
+   }
 }
 
 static void erase_snake(snake s)
 {
-	int i;
-	for (i = 0; i < s->len; i++)
-	{
-		//VGA_display_attr_char(s->body[i].x, s->body[i].y, ' ', VGA_BLACK, VGA_BLACK);
-		PrintCharacter(vgaMakeAttribute(VGA_COLORS::Black, VGA_COLORS::Black, false), ' ', s->body[i].x, s->body[i].y);
-	}
+   int i;
+   for (i = 0; i < s->len; i++)
+   {
+      //VGA_display_attr_char(s->body[i].x, s->body[i].y, ' ', VGA_BLACK, VGA_BLACK);
+      PrintCharacter(vgaMakeAttribute(VGA_COLORS::Black, VGA_COLORS::Black, false), ' ', s->body[i].x, s->body[i].y);
+   }
 }
 
 void kill_snake()
@@ -441,7 +463,7 @@ void kill_snake()
 /* set the flag so that the next time run_snake goes around it's
  * killed
  */
-	endsnake = 1;
+   endsnake = 1;
 }
 
 
@@ -449,7 +471,7 @@ static int snake_delay = 5;     /* default 50 msec */
 extern unsigned int get_snake_delay()
 {
 /* return whatever the current delay is */
-	return snake_delay;
+   return snake_delay;
 }
 
 extern void set_snake_delay(unsigned int msec)
@@ -457,30 +479,31 @@ extern void set_snake_delay(unsigned int msec)
 /* set the snake delay between moves to the given number
  * of milliseconds
  */
-	snake_delay = msec;
+   snake_delay = msec;
 }
 
 static int noop_func(int i)
 {
-	return i + 10;
+   return i + 10;
 }
 
 static void delay()
 {
-	for (int i = 0; i < 0xFFFFF; i++)
-		noop_func(10);
-	#if 0
-	  /*
-		* Sleep for the number of milliseconds specified by
-		* snake_delay
-		*/
-	struct timespec tv;
-	tv.tv_sec = (snake_delay * 1000) / 1000000000;
-	tv.tv_nsec = (snake_delay * 1000000) % 1000000000;
-	if ((-1 == nanosleep(&tv, NULL)) && errno != EINTR) {
-		perror("nanosleep");
-	}
-	#endif
+   for (int i = 0; i < 0xFFFFF; i++)
+      noop_func(10);
+   #if 0
+     /*
+      * Sleep for the number of milliseconds specified by
+      * snake_delay
+      */
+   struct timespec tv;
+   tv.tv_sec = (snake_delay * 1000) / 1000000000;
+   tv.tv_nsec = (snake_delay * 1000000) % 1000000000;
+   if ((-1 == nanosleep(&tv, NULL)) && errno != EINTR)
+   {
+      perror("nanosleep");
+   }
+   #endif
 }
 
 snake snakeFromLWpid(int lw_pid)
@@ -488,50 +511,50 @@ snake snakeFromLWpid(int lw_pid)
 /* return a pointer to the snake with the given lw_pid,
  * or NULL if it doesn't exist
  */
-	snake s;
-	for (s = allsnakes; s; s = s->others)
-		if (s->pid == GetCurProc()->ProcessID)
-			break;
-	return s;
+   snake s;
+   for (s = allsnakes; s; s = s->others)
+      if (s->pid == GetCurProc()->ProcessID)
+         break;
+   return s;
 }
 
 proc_id_t setup_snakes(int hungry)
 {
-	int i, cnt;
-	static snake s[MAXSNAKES];
-	struct context_t *snake;
+   int i, cnt;
+   static snake s[MAXSNAKES];
+   struct context_t *snake;
 
-	// Don't use this seed for anything meaningful
-	SeedRandom(GetCurProc()->ProcessID);
-	rows = GetScreenHeight();
-	cols = GetScreenWidth();
+   // Don't use this seed for anything meaningful
+   SeedRandom(GetCurProc()->ProcessID);
+   rows = GetScreenHeight();
+   cols = GetScreenWidth();
 
-	/* Initialize Snakes */
-	cnt = 0;
-	/* snake new_snake(int y, int x, int len, int dir, int color) ;*/
+   /* Initialize Snakes */
+   cnt = 0;
+   /* snake new_snake(int y, int x, int len, int dir, int color) ;*/
 
-	s[cnt++] = new_snake(8, 30, 10, E, 1);/* each starts a different color */
-	s[cnt++] = new_snake(10, 30, 10, E, 2);
-	s[cnt++] = new_snake(12, 30, 10, E, 3);
-	s[cnt++] = new_snake(8, 50, 10, W, 4);
-	s[cnt++] = new_snake(10, 50, 10, W, 5);
-	s[cnt++] = new_snake(12, 50, 10, W, 6);
-	s[cnt++] = new_snake(4, 40, 10, S, 7);
+   s[cnt++] = new_snake(8, 30, 10, E, 1);/* each starts a different color */
+   s[cnt++] = new_snake(10, 30, 10, E, 2);
+   s[cnt++] = new_snake(12, 30, 10, E, 3);
+   s[cnt++] = new_snake(8, 50, 10, W, 4);
+   s[cnt++] = new_snake(10, 50, 10, W, 5);
+   s[cnt++] = new_snake(12, 50, 10, W, 6);
+   s[cnt++] = new_snake(4, 40, 10, S, 7);
 
-	/* Draw each snake */
-	ClearScreen(VGA_MODES::VGA, VGA_COLORS::Black);
-	draw_all_snakes();
+   /* Draw each snake */
+   ClearScreen(VGA_MODES::VGA, VGA_COLORS::Black);
+   draw_all_snakes();
 
-	/* turn each snake loose as an individual LWP */
-	for (i = 0; i < cnt; i++) 
-	{
-		snake = ProcessCreate(hungry ? run_hungry_snake : run_snake, &s[i]);
-		//snake = PROC_create_kthread(hungry ? run_hungry_snake : run_snake, &s[i]);
-		if (snake)
-		{
-			s[i]->pid = snake->ProcessID;
-		}
-	}
+   /* turn each snake loose as an individual LWP */
+   for (i = 0; i < cnt; i++)
+   {
+      snake = ProcessCreate(hungry ? run_hungry_snake : run_snake, &s[i]);
+      //snake = PROC_create_kthread(hungry ? run_hungry_snake : run_snake, &s[i]);
+      if (snake)
+      {
+         s[i]->pid = snake->ProcessID;
+      }
+   }
 
-	return s[0]->pid;
+   return s[0]->pid;
 }

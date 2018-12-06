@@ -4,6 +4,6 @@
 #include "kernel_multiboot.h"
 
 #if defined(__cplusplus)
-extern "C" 
+extern "C"
 #endif
 LIB_EXPORT result_t kernel_main(multiboot_start_tag_t* mbstart_p);

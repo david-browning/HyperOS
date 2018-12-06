@@ -62,30 +62,30 @@ typedef uint32_t facility_result_t;
 typedef uint32_t code_result_t;
 
 inline constexpr result_t MakeResult(const bool failed,
-												 const facility_result_t facility,
-												 const code_result_t code)
+                                     const facility_result_t facility,
+                                     const code_result_t code)
 {
-	return (failed ? 0x8000000000000000 : 0) |
-		(((uint64_t)facility & 0x7FFFFFFF) << (sizeof(code_result_t) * uint32_t(8))) |
-		code;
+   return (failed ? 0x8000000000000000 : 0) |
+      (((uint64_t)facility & 0x7FFFFFFF) << (sizeof(code_result_t) * uint32_t(8))) |
+      code;
 }
 
 //Returns true if the result indicates a failure.
 inline constexpr bool ResultFailed(const result_t r)
 {
-	return r < 0;
+   return r < 0;
 }
 
 //Returns the error code from the result.
 inline code_result_t GetCodeFromResult(const result_t r)
 {
-	return (code_result_t)(r & 0x00000000FFFFFFFF);
+   return (code_result_t)(r & 0x00000000FFFFFFFF);
 }
 
 //Returns the facility code from the result.
 inline facility_result_t GetFacilityFromResult(const result_t r)
 {
-	return (facility_result_t)((r >> sizeof(code_result_t) * 8) & 0x00007FFFFFFF);
+   return (facility_result_t)((r >> sizeof(code_result_t) * 8) & 0x00007FFFFFFF);
 }
 
 static constexpr facility_result_t FACILITY_NONE = 0x0000;
@@ -561,19 +561,19 @@ static constexpr result_t RES_UNKNOWN_THREAD_ERROR = MakeResult(true, FACILITY_T
 template<typename T>
 INLINE_K constexpr T RoundUp(_IN_ const T val, _IN_ const T nearest)
 {
-	T remainder = val % nearest;
-	return remainder == 0 ? val : val + nearest - remainder;
+   T remainder = val % nearest;
+   return remainder == 0 ? val : val + nearest - remainder;
 }
 
 template<typename T>
 inline constexpr T GetMin(T value)
 {
-	return value;
+   return value;
 }
 
 template<typename T, typename... Tlist>
 inline constexpr T GetMin(T value, Tlist... list)
 {
-	T min = GetMin<T>(list...);
-	return value < min ? value : min;
+   T min = GetMin<T>(list...);
+   return value < min ? value : min;
 }
